@@ -1,0 +1,21 @@
+# Meshes are BUILD INPUTS, not repo content.
+# One galleon GLB is ~58 MB; a full hull line is 400 MB+. They live in the mesh
+# store and are re-derivable from the saved Comfy workflow. Sprites are what
+# this repo ships.
+*.glb
+*.gltf
+*.fbx
+*.obj
+mesh/
+mesh-store/
+
+# Local staging + intermediates
+_staging/
+plates-raw/
+turntable/
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+.DS_Store

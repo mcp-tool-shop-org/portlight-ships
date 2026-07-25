@@ -1,0 +1,85 @@
+{
+  "hull": "galleon",
+  "subjects": [
+    {
+      "subject_id": "galleon__01-pristine__sails-open",
+      "hull": "galleon",
+      "state": "01-pristine",
+      "rig": "sails-open",
+      "is_master": true,
+      "plate_raw": "galleon/plates-raw/galleon__01-pristine__sails-open",
+      "mesh": null,
+      "pack_path": "assets/galleon__01-pristine__sails-open"
+    },
+    {
+      "subject_id": "galleon__01-pristine__sails-closed",
+      "hull": "galleon",
+      "state": "01-pristine",
+      "rig": "sails-closed",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__01-pristine__sails-closed",
+      "mesh": "galleon/mesh/galleon__01-pristine__sails-closed",
+      "pack_path": "assets/galleon__01-pristine__sails-closed"
+    },
+    {
+      "subject_id": "galleon__02-light__sails-open",
+      "hull": "galleon",
+      "state": "02-light",
+      "rig": "sails-open",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__02-light__sails-open",
+      "mesh": "galleon/mesh/galleon__02-light__sails-open",
+      "pack_path": "assets/galleon__02-light__sails-open"
+    },
+    {
+      "subject_id": "galleon__02-light__sails-closed",
+      "hull": "galleon",
+      "state": "02-light",
+      "rig": "sails-closed",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__02-light__sails-closed",
+      "mesh": "galleon/mesh/galleon__02-light__sails-closed",
+      "pack_path": "assets/galleon__02-light__sails-closed"
+    },
+    {
+      "subject_id": "galleon__03-moderate__sails-open",
+      "hull": "galleon",
+      "state": "03-moderate",
+      "rig": "sails-open",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__03-moderate__sails-open",
+      "mesh": "galleon/mesh/galleon__03-moderate__sails-open",
+      "pack_path": "assets/galleon__03-moderate__sails-open"
+    },
+    {
+      "subject_id": "galleon__03-moderate__sails-closed",
+      "hull": "galleon",
+      "state": "03-moderate",
+      "rig": "sails-closed",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__03-moderate__sails-closed",
+      "mesh": "galleon/mesh/galleon__03-moderate__sails-closed",
+      "pack_path": "assets/galleon__03-moderate__sails-closed"
+    },
+    {
+      "subject_id": "galleon__04-heavy__sails-open",
+      "hull": "galleon",
+      "state": "04-heavy",
+      "rig": "sails-open",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__04-heavy__sails-open",
+      "mesh": "galleon/mesh/galleon__04-heavy__sails-open",
+      "pack_path": "assets/galleon__04-heavy__sails-open"
+    },
+    {
+      "subject_id": "galleon__05-destroyed__sails-none",
+      "hull": "galleon",
+      "state": "05-destroyed",
+      "rig": "sails-none",
+      "is_master": false,
+      "plate_raw": "galleon/plates-raw/galleon__05-destroyed__sails-none",
+      "mesh": "galleon/mesh/galleon__05-destroyed__sails-none",
+      "pack_path": "assets/galleon__05-destroyed__sails-none"
+    }
+  ]
+}
