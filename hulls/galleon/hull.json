@@ -1,0 +1,9 @@
+{
+  "hull_id": "galleon",
+  "display_name": "Galleon",
+  "description": "a 1600s Spanish galleon, three tall masts, ornate carved stern gallery, gilded trim, figurehead at the bow",
+  "notes": "First hull through the pipeline. The `description` is spliced into the master prompt — write it as a noun phrase that reads naturally after '3D game asset render of'. Everything else (damage ladder, framing, palette, style) is shared across hulls and lives in pipeline/build_ladder_workflow.py, so a new ship needs only this file.",
+  "frame_world_units": 13.0,
+  "camera_elevation_deg": 30.0,
+  "sprite_size": 512
+}

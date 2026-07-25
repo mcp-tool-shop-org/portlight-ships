@@ -1,0 +1,98 @@
+{
+  "subject_id": "galleon__01-pristine__sails-closed",
+  "hull": "galleon",
+  "state": "01-pristine",
+  "rig": "sails-closed",
+  "headings": [
+    "front",
+    "front_left",
+    "left",
+    "back_left",
+    "back",
+    "back_right",
+    "right",
+    "front_right"
+  ],
+  "channels": [
+    "albedo"
+  ],
+  "size": 512,
+  "frame_world_units": 13.0,
+  "camera_elevation_deg": 30.0,
+  "source_mesh": "galleon__01-pristine__sails-closed.glb",
+  "preview": "preview/contact_sheet.png",
+  "per_heading": {
+    "front": {
+      "transparent_pct": 91.9,
+      "bbox": [
+        203,
+        90,
+        308,
+        425
+      ]
+    },
+    "front_left": {
+      "transparent_pct": 84.6,
+      "bbox": [
+        115,
+        97,
+        414,
+        415
+      ]
+    },
+    "left": {
+      "transparent_pct": 82.8,
+      "bbox": [
+        58,
+        116,
+        453,
+        400
+      ]
+    },
+    "back_left": {
+      "transparent_pct": 85.0,
+      "bbox": [
+        115,
+        112,
+        414,
+        457
+      ]
+    },
+    "back": {
+      "transparent_pct": 92.0,
+      "bbox": [
+        203,
+        103,
+        308,
+        483
+      ]
+    },
+    "back_right": {
+      "transparent_pct": 85.0,
+      "bbox": [
+        97,
+        112,
+        396,
+        457
+      ]
+    },
+    "right": {
+      "transparent_pct": 82.7,
+      "bbox": [
+        58,
+        116,
+        453,
+        401
+      ]
+    },
+    "front_right": {
+      "transparent_pct": 84.6,
+      "bbox": [
+        97,
+        98,
+        396,
+        415
+      ]
+    }
+  }
+}

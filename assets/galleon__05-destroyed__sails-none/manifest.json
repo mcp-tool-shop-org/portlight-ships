@@ -1,0 +1,98 @@
+{
+  "subject_id": "galleon__05-destroyed__sails-none",
+  "hull": "galleon",
+  "state": "05-destroyed",
+  "rig": "sails-none",
+  "headings": [
+    "front",
+    "front_left",
+    "left",
+    "back_left",
+    "back",
+    "back_right",
+    "right",
+    "front_right"
+  ],
+  "channels": [
+    "albedo"
+  ],
+  "size": 512,
+  "frame_world_units": 13.0,
+  "camera_elevation_deg": 30.0,
+  "source_mesh": "galleon__05-destroyed__sails-none.glb",
+  "preview": "preview/contact_sheet.png",
+  "per_heading": {
+    "front": {
+      "transparent_pct": 91.0,
+      "bbox": [
+        184,
+        102,
+        327,
+        431
+      ]
+    },
+    "front_left": {
+      "transparent_pct": 84.0,
+      "bbox": [
+        116,
+        121,
+        417,
+        412
+      ]
+    },
+    "left": {
+      "transparent_pct": 82.3,
+      "bbox": [
+        58,
+        124,
+        453,
+        389
+      ]
+    },
+    "back_left": {
+      "transparent_pct": 84.6,
+      "bbox": [
+        116,
+        102,
+        417,
+        450
+      ]
+    },
+    "back": {
+      "transparent_pct": 91.0,
+      "bbox": [
+        184,
+        93,
+        327,
+        475
+      ]
+    },
+    "back_right": {
+      "transparent_pct": 84.5,
+      "bbox": [
+        94,
+        102,
+        395,
+        450
+      ]
+    },
+    "right": {
+      "transparent_pct": 82.5,
+      "bbox": [
+        58,
+        124,
+        453,
+        389
+      ]
+    },
+    "front_right": {
+      "transparent_pct": 84.0,
+      "bbox": [
+        94,
+        121,
+        396,
+        412
+      ]
+    }
+  }
+}

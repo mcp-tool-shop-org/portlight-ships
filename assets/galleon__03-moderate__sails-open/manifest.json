@@ -1,0 +1,98 @@
+{
+  "subject_id": "galleon__03-moderate__sails-open",
+  "hull": "galleon",
+  "state": "03-moderate",
+  "rig": "sails-open",
+  "headings": [
+    "front",
+    "front_left",
+    "left",
+    "back_left",
+    "back",
+    "back_right",
+    "right",
+    "front_right"
+  ],
+  "channels": [
+    "albedo"
+  ],
+  "size": 512,
+  "frame_world_units": 13.0,
+  "camera_elevation_deg": 30.0,
+  "source_mesh": "galleon__03-moderate__sails-open.glb",
+  "preview": "preview/contact_sheet.png",
+  "per_heading": {
+    "front": {
+      "transparent_pct": 88.5,
+      "bbox": [
+        190,
+        91,
+        321,
+        425
+      ]
+    },
+    "front_left": {
+      "transparent_pct": 78.6,
+      "bbox": [
+        116,
+        99,
+        413,
+        416
+      ]
+    },
+    "left": {
+      "transparent_pct": 75.7,
+      "bbox": [
+        58,
+        116,
+        453,
+        401
+      ]
+    },
+    "back_left": {
+      "transparent_pct": 79.4,
+      "bbox": [
+        115,
+        106,
+        411,
+        457
+      ]
+    },
+    "back": {
+      "transparent_pct": 87.3,
+      "bbox": [
+        190,
+        97,
+        321,
+        481
+      ]
+    },
+    "back_right": {
+      "transparent_pct": 79.1,
+      "bbox": [
+        98,
+        105,
+        395,
+        456
+      ]
+    },
+    "right": {
+      "transparent_pct": 76.1,
+      "bbox": [
+        58,
+        115,
+        453,
+        400
+      ]
+    },
+    "front_right": {
+      "transparent_pct": 79.0,
+      "bbox": [
+        100,
+        98,
+        396,
+        415
+      ]
+    }
+  }
+}

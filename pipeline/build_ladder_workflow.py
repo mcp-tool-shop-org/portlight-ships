@@ -48,6 +48,7 @@ import argparse
 import json
 import sys
 import uuid
+from pathlib import Path
 
 MODEL = "Nano Banana 2 (Gemini 3.1 Flash Image)"
 
@@ -99,14 +100,24 @@ BG_PROMPT = (
     "Do not alter, restyle, recolour, crop, rotate or move the ship in any way."
 )
 
-# --- hull definition -------------------------------------------------------
-# Swap HULL_DESCRIPTION per ship; the ladder below is shared by every hull.
-HULLS = {
-    "galleon": (
-        "a 1600s Spanish galleon, three tall masts, ornate carved stern gallery, "
-        "gilded trim, figurehead at the bow"
-    ),
-}
+# --- hull definitions ------------------------------------------------------
+# Loaded from hulls/<hull>/hull.json so adding a ship is a CONFIG change, not a
+# code change. Everything below this point — the damage ladder, framing, palette,
+# style, the STOWED clause — is shared by every hull deliberately: that shared
+# spine is what makes different ships look like they belong to the same game.
+_HULL_DIR = Path(__file__).resolve().parent.parent / "hulls"
+
+
+def _load_hulls() -> dict[str, str]:
+    hulls: dict[str, str] = {}
+    if _HULL_DIR.is_dir():
+        for hull_json in sorted(_HULL_DIR.glob("*/hull.json")):
+            spec = json.loads(hull_json.read_text(encoding="utf-8"))
+            hulls[spec["hull_id"]] = spec["description"]
+    return hulls
+
+
+HULLS = _load_hulls()
 
 ANCHOR_STATE = "01-pristine"
 ANCHOR_RIG = "sails-open"

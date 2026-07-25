@@ -1,0 +1,31 @@
+{
+  "hull": "galleon",
+  "headings": [
+    "front",
+    "front_left",
+    "left",
+    "back_left",
+    "back",
+    "back_right",
+    "right",
+    "front_right"
+  ],
+  "channels": [
+    "albedo"
+  ],
+  "channels_not_yet_implemented": [
+    "depth",
+    "normal"
+  ],
+  "size": 512,
+  "subjects": [
+    "galleon__01-pristine__sails-closed",
+    "galleon__01-pristine__sails-open",
+    "galleon__02-light__sails-closed",
+    "galleon__02-light__sails-open",
+    "galleon__03-moderate__sails-closed",
+    "galleon__03-moderate__sails-open",
+    "galleon__04-heavy__sails-open",
+    "galleon__05-destroyed__sails-none"
+  ]
+}
