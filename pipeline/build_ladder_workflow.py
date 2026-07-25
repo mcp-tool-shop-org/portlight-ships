@@ -141,13 +141,30 @@ HULLS = _load_hulls()
 ANCHOR_STATE = "01-pristine"
 ANCHOR_RIG = "sails-open"
 
-# The sails-closed clause. EARNED THE HARD WAY — do not "tidy" this back into
-# nautical terminology. "Sails FURLED and stowed tight to the yards" is the
-# correct term and it FAILED: the model read *furled* as *gathered* and returned
-# full canvas on every yard across all three closed states, which then went on to
-# waste three Tripo meshes. Describing the visual RESULT works. Note the explicit
-# negative ("NOT a ship under sail") — the positive description alone was not
-# enough on its own.
+# ---------------------------------------------------------------------------
+# TWO PROMPT LAWS, both earned by failing first. They generalise past ships.
+#
+# LAW 1 — DESCRIBE THE RESULT, NOT THE MANOEUVRE, AND ADD THE NEGATIVE.
+#   "Sails FURLED and stowed tight to the yards" is the correct nautical term and
+#   it FAILED: the model read *furled* as *gathered* and returned full canvas on
+#   every yard across all three closed states, wasting three Tripo meshes. What
+#   works is describing what you would SEE, plus an explicit negative ("NOT a
+#   ship under sail"). The positive description alone was not enough.
+#
+# LAW 2 — A TOPOLOGY CHANGE MUST BE THE DOMINANT INSTRUCTION, ON ITS OWN PASS.
+#   The model will do TEXTURE damage (tearing, scorching, staining) happily as one
+#   item in a list. It will quietly refuse STRUCTURAL damage — snapping a mast,
+#   removing a spar — when that sits inside a list of other changes. "One mast
+#   snapped and leaning" was ignored TWICE while the sail tearing in the same
+#   prompt was obeyed both times.
+#   The fix: give the structural change its own edit pass, chained off the
+#   already-good previous plate, with the change as the ONLY job ("YOUR ONE JOB IS
+#   TO BREAK A MAST"), spelled out as drawing instructions (which half stands,
+#   which half hangs, at what angle), plus the negative ("DO NOT draw all three
+#   masts standing upright"). That worked on the first try.
+#   Corollary: chain the isolated pass off the improved plate, not the original —
+#   otherwise you pay again for the texture damage you already got right.
+# ---------------------------------------------------------------------------
 STOWED = (
     "ALL SAILS ARE STOWED AWAY. Every single sail is rolled up into a tight thin bundle "
     "lashed along the TOP of its yard-arm. NO canvas hangs below any yard. NO sail "
@@ -192,10 +209,22 @@ LADDER = [
     ),
     (
         "04-heavy", "sails-open", ("03-moderate", "sails-open"),
-        "HEAVY damage. Sails shredded to ragged strips, one mast snapped and leaning, the "
-        "hull breached in two places with visible splintering and blackened scorching, "
-        "rigging torn and trailing, stern gallery partly shattered. Still afloat and "
-        "clearly recognisable as the same vessel. Remaining sails open.",
+        # SECOND instance of the model softening destructive language — same class
+        # as STOWED. "Shredded to ragged strips" and "one mast snapped" produced a
+        # ship with ~80% of its canvas and three upright masts: it would still
+        # sail. State the RESULT and how much is GONE, and add the explicit
+        # negative. 04 has no sails-closed variant precisely because the canvas is
+        # destroyed — you cannot furl what is not there — so if this state comes
+        # back intact, the whole rig matrix stops making sense.
+        "CATASTROPHIC damage. MOST OF THE SAIL CANVAS IS GONE — not merely torn, GONE. "
+        "Only narrow ragged vertical strips still hang from the yards, roughly a quarter "
+        "of each sail's original area, whipping loose in the wind. Clear sky and rigging "
+        "show through the huge empty gaps where the sail bodies used to be. NOT ONE sail "
+        "is still a usable sheet and none could catch wind. ONE MAST IS SNAPPED partway "
+        "up and leans hard at an angle, its upper section hanging tangled in the rigging. "
+        "The hull is breached in two places with splintered planking and blackened "
+        "scorching, the stern gallery partly shattered, rigging torn and trailing. Still "
+        "afloat and clearly recognisable as the same vessel. THIS SHIP CANNOT SAIL.",
     ),
     (
         "05-destroyed", "sails-none", ("04-heavy", "sails-open"),
