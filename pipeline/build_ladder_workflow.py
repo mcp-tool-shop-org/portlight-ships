@@ -111,12 +111,29 @@ HULLS = {
 ANCHOR_STATE = "01-pristine"
 ANCHOR_RIG = "sails-open"
 
+# The sails-closed clause. EARNED THE HARD WAY — do not "tidy" this back into
+# nautical terminology. "Sails FURLED and stowed tight to the yards" is the
+# correct term and it FAILED: the model read *furled* as *gathered* and returned
+# full canvas on every yard across all three closed states, which then went on to
+# waste three Tripo meshes. Describing the visual RESULT works. Note the explicit
+# negative ("NOT a ship under sail") — the positive description alone was not
+# enough on its own.
+STOWED = (
+    "ALL SAILS ARE STOWED AWAY. Every single sail is rolled up into a tight thin bundle "
+    "lashed along the TOP of its yard-arm. NO canvas hangs below any yard. NO sail "
+    "surface is visible anywhere on the ship. The sky and the rigging show clearly "
+    "through the large empty gaps between the masts and yards where the sails used to "
+    "hang. The ship's silhouette is reduced to bare masts, bare yards and rigging only. "
+    "This is a ship at anchor with all canvas put away, NOT a ship under sail. "
+)
+
 # (state, rig, prev_or_None, damage delta). prev None => master is the previous state.
 LADDER = [
     (
         "01-pristine", "sails-closed", None,
-        "Sails FURLED and stowed tight to the yards. The ship is otherwise identical and "
-        "completely undamaged.",
+        STOWED
+        + "The hull and everything else is identical to the master and completely "
+        "undamaged.",
     ),
     (
         "02-light", "sails-open", None,
@@ -126,8 +143,9 @@ LADDER = [
     ),
     (
         "02-light", "sails-closed", ("02-light", "sails-open"),
-        "Exactly the light damage shown in reference image 2, but with the sails FURLED "
-        "and stowed tight to the yards.",
+        STOWED
+        + "The hull keeps EXACTLY the light damage shown in reference image 2 — the same "
+        "scuffing and salt staining along the planking, the same loose ropes.",
     ),
     (
         "03-moderate", "sails-open", ("02-light", "sails-open"),
@@ -137,8 +155,10 @@ LADDER = [
     ),
     (
         "03-moderate", "sails-closed", ("03-moderate", "sails-open"),
-        "Exactly the moderate damage shown in reference image 2, but with the surviving "
-        "sails FURLED and stowed.",
+        STOWED.replace("ALL SAILS ARE", "ALL SURVIVING SAILS ARE")
+        + "There is one broken spar and slack hanging rigging. The hull keeps EXACTLY the "
+        "moderate damage shown in reference image 2 — the same scorch marks and "
+        "splintered planking around the gun ports.",
     ),
     (
         "04-heavy", "sails-open", ("03-moderate", "sails-open"),
