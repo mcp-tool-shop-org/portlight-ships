@@ -139,15 +139,36 @@ sails, and a furled ship really is ~42% narrower bow-on.
 
 ## Known gaps
 
-- **`depth` and `normal` channels are not implemented.** Blender 5.2 rewrote the
-  compositor (`Scene.node_tree` gone, no Math/MapRange/ValToRGB nodes,
-  `OutputFile.file_slots` removed). A depth pass built on what survives would be
-  normalised per-frame and silently useless. The durable route is a material-
-  override render; that is its own increment.
-- **Plate background is mid-grey, not chroma key.** Both concept-plate cutout
-  problems (rigging sealing the sky into unreachable pockets, pale sails falling
-  within tolerance of the background) exist only because of this. One clause in
-  `FRAMING` fixes it for every future hull, but it changes the master, so it is a
-  deliberate call.
+- **⚠ No in-engine spin test has been run, on any hull.** `tools/spin-test.html`
+  and `pipeline/make_spin_gif.py` exercise the sprites the way a renderer would —
+  every state in lockstep against a fixed graticule, which is what makes scale
+  jump, anchor drift and flicker visible — but they are a **proxy**, not the
+  gate. The standing rule is that ship sprites are not ready until they spin
+  correctly *in the engine*. There is no engine yet. Do not record this as
+  satisfied.
+- **Normal maps use the OpenGL convention** (+Y up, +Z out of the surface toward
+  the viewer, so camera-facing reads blue). Flip the green channel downstream if
+  a consumer wants DirectX.
 - **Normalisation anchors the keel at Y=0**, a deterministic approximation of a
   waterline. If ships sit wrong in engine, look here first.
+- **The galleon's plates are on grey**, predating the chroma-key switch. They are
+  not being regenerated: stage 3 takes alpha from Blender, so the sprite pack is
+  identical either way. Hull #2 onward gets chroma.
+
+---
+
+## Verifying the spin
+
+```bash
+python -m http.server 8777 --directory .    # then open /tools/spin-test.html
+python pipeline/make_spin_gif.py --hull brigantine
+```
+
+Watch for, in order of how often they bite:
+
+| Symptom | Means |
+|---|---|
+| one state larger/smaller than its neighbours | an un-normalised mesh |
+| hull wandering off the crosshair as it turns | anchor/pivot drift |
+| one heading darker than the rest | lights not orbiting with the camera |
+| shape discontinuity between adjacent headings | mesh defect at that angle |

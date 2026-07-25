@@ -70,10 +70,29 @@ BRAND_PALETTE = (
     "warm gold lantern accents."
 )
 
+# CHROMA KEY, not grey. Measured on a one-call probe (see docs/adding-a-hull.md):
+#
+#   grey   background and pale canvas share a colour neighbourhood. Tolerance 8
+#          worked; 26 punched holes straight through the sails. A knife edge.
+#   green  shares nothing with timber, canvas or gold. Tolerance 26..90 returned a
+#          byte-identical bbox — a 3.5x window instead of a knife edge — with the
+#          sails fully intact at the top of it.
+#
+# The cost is green spill on rigging edges and through the ratlines, which
+# cutout_plates.py removes automatically (it detects a green plate and despills).
+# That is why the prompt forbids green ANYWHERE on the ship: despill would
+# desaturate a genuinely green sail.
+#
+# NOTE: the galleon's shipped plates predate this and are on grey. They are not
+# being regenerated — stage 3 takes alpha straight from Blender, so the sprite
+# pack is unaffected either way. This is for hull #2 onward.
 FRAMING = (
     "Rendered at a 3/4 FRONT angle with the BOW POINTING LEFT, ship centred and fully "
-    "inside the frame with clear margin on all four sides, flat neutral mid-gray studio "
-    "background, clean even lighting, no water, no ground plane, no cast shadow."
+    "inside the frame with clear margin on all four sides, clean even lighting, no "
+    "water, no ground plane, no cast shadow. THE BACKGROUND IS FLAT PURE CHROMA-KEY "
+    "GREEN, pure saturated RGB(0,255,0), completely uniform with no gradient, no "
+    "vignette and no shading. NOTHING else in the image is green: the hull, sails, "
+    "rigging, flags and every other part of the ship must contain no green whatsoever."
 )
 
 STYLE = (

@@ -79,10 +79,49 @@ def edge_flood_alpha(rgb: np.ndarray, tol: int, bridge: int = 3) -> np.ndarray:
     return visited & within
 
 
+def is_chroma_green(rgb: np.ndarray) -> bool:
+    """Is the plate shot on chroma green rather than the grey studio background?"""
+    border = np.concatenate([rgb[0, :], rgb[-1, :], rgb[:, 0], rgb[:, -1]])
+    r, g, b = np.median(border, axis=0)
+    return g > 90 and g > r * 1.6 and g > b * 1.6
+
+
+def despill(rgb: np.ndarray) -> np.ndarray:
+    """Remove green spill from edge pixels.
+
+    A chroma-key plate bounces green onto the subject, and the cut-out keeps it —
+    most visibly along rigging lines and through the ratlines, where nearly every
+    pixel borders background. Untreated, every ship ships with a green fringe.
+
+    Standard average-despill: wherever green exceeds the mean of red and blue, pull
+    it back to that mean. Neutral and warm surfaces (timber, canvas, gold) are
+    untouched because their green already sits at or below that mean; only the
+    contaminated pixels move. This is why the plate prompt forbids green ANYWHERE
+    on the ship — a genuinely green sail would be desaturated by this pass.
+    """
+    out = rgb.astype(np.int16)
+    limit = (out[:, :, 0] + out[:, :, 2]) // 2
+    out[:, :, 1] = np.minimum(out[:, :, 1], limit)
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def cutout(path: Path, tol: int, bridge: int) -> Image.Image:
     im = Image.open(path).convert("RGB")
     rgb = np.asarray(im)
+
+    chroma = is_chroma_green(rgb)
+    if chroma:
+        # Grey backgrounds need a knife-edge tolerance (8) because pale sails sit
+        # within ~26 of the background and get punched through. Green shares no
+        # colour neighbourhood with timber, canvas or gold, so the safe window is
+        # wide: measured tol=26..90 gives a byte-identical bbox on the probe plate.
+        # 60 sits in the middle of that window rather than on either edge.
+        tol = max(tol, 60)
+
     bg_mask = edge_flood_alpha(rgb, tol, bridge)
+
+    if chroma:
+        rgb = despill(rgb)
 
     alpha = np.where(bg_mask, 0, 255).astype(np.uint8)
     rgba = np.dstack([rgb, alpha])
