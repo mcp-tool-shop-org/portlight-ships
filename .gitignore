@@ -10,9 +10,13 @@ mesh/
 mesh-store/
 
 # Local staging + intermediates
+# NOTE: plates-raw/ is deliberately NOT ignored — the plates are the expensive
+# artifact (a paid generation each) and are small enough to version. Only the
+# derived, re-runnable outputs are excluded.
 _staging/
-plates-raw/
 turntable/
+plates-rgba/
+plates-normalised/
 __pycache__/
 *.pyc
 
