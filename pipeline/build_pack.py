@@ -58,11 +58,12 @@ def parse_subject(subject_id: str) -> dict:
 
 
 def render_subject(blender: str, glb: Path, dest: Path, subject_id: str,
-                   size: int, frame: float, elev: float) -> None:
+                   size: int, frame: float, elev: float, passes: list[str]) -> None:
     cmd = [
         blender, "-b", "--python", str(REPO / "pipeline" / "stage3_render_pack.py"), "--",
         "--glb", str(glb), "--out", str(dest), "--subject", subject_id,
         "--size", str(size), "--frame", str(frame), "--elev", str(elev),
+        "--passes", ",".join(passes),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0 or "STAGE3 DONE" not in proc.stdout:
@@ -125,6 +126,7 @@ def main() -> int:
     ap.add_argument("--size", type=int, default=512)
     ap.add_argument("--frame", type=float, default=13.0)
     ap.add_argument("--elev", type=float, default=30.0)
+    ap.add_argument("--passes", nargs="*", default=["albedo", "depth", "normal"])
     ap.add_argument("--only", nargs="*", default=None, help="subject ids to (re)build")
     ap.add_argument("--force", action="store_true", help="rebuild even if present")
     args = ap.parse_args()
@@ -153,11 +155,11 @@ def main() -> int:
         try:
             meta = parse_subject(subject_id)
             render_subject(args.blender, glb, dest, subject_id,
-                           args.size, args.frame, args.elev)
+                           args.size, args.frame, args.elev, args.passes)
             sheet = contact_sheet(dest, subject_id)
             meta.update({
                 "headings": HEADINGS,
-                "channels": ["albedo"],
+                "channels": args.passes,
                 "size": args.size,
                 "frame_world_units": args.frame,
                 "camera_elevation_deg": args.elev,
@@ -176,8 +178,7 @@ def main() -> int:
     pack = {
         "hull": args.hull,
         "headings": HEADINGS,
-        "channels": ["albedo"],
-        "channels_not_yet_implemented": ["depth", "normal"],
+        "channels": args.passes,
         "size": args.size,
         "subjects": sorted({p.name for p in assets.glob(f"{args.hull}__*")}),
     }

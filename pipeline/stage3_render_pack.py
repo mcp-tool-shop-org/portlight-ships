@@ -169,37 +169,103 @@ try:
 except AttributeError:
     pass
 
-# --- depth / normal channels: NOT IMPLEMENTED, deliberately ----------------
-# The sprite-foundry-packs layout has albedo/ depth/ normal/, so these are
-# wanted eventually. They are NOT implemented here yet, and this fails loudly
-# rather than writing something plausible-but-wrong.
+# --- depth / normal channels, via MATERIAL OVERRIDE ------------------------
+# NOT via the compositor. Blender 5.2 rewrote it: `Scene.node_tree` is gone,
+# the node set is cut to 92 types with no Math / MapRange / ValToRGB, and
+# CompositorNodeOutputFile lost `file_slots`. A depth pass built on what
+# survives would be normalised PER FRAME — the same hull point mapping to a
+# different grey in each heading, which looks comparable and is silently
+# useless.
 #
-# Reason: Blender 5.2 rewrote the compositor. `Scene.node_tree` is gone
-# (replaced by `Scene.compositing_node_group`), the node set is cut to 92 types
-# with no Math / MapRange / ValToRGB, and CompositorNodeOutputFile lost
-# `file_slots` in favour of a single unnamed input. A depth pass built on what
-# survives would be normalised PER FRAME, so the same hull point would map to a
-# different grey in each heading — comparable-looking, silently useless.
-#
-# The durable route is a material-override render (ShaderNodeNewGeometry +
-# ShaderNodeVectorTransform -> Emission) which is camera-space, explicit, and
-# immune to compositor API churn. That is its own increment with its own
-# verification, not a bolt-on to this one.
-unsupported = [p for p in PASSES if p != "albedo"]
+# A material override sidesteps all of it. Both maps are computed in the SHADER
+# in camera space, which is explicit, absolute, and immune to compositor churn.
+# Emission needs no lighting, so the light rig is irrelevant to these passes.
+KNOWN_PASSES = ("albedo", "depth", "normal")
+unsupported = [p for p in PASSES if p not in KNOWN_PASSES]
 if unsupported:
-    print(
-        f"ERROR: pass(es) {unsupported} are not implemented. Only 'albedo' is "
-        "supported today — see the comment in this file for why, and do not "
-        "work around it by enabling the compositor passes.",
-        flush=True,
-    )
+    print(f"ERROR: unknown pass(es) {unsupported}; known: {KNOWN_PASSES}", flush=True)
     sys.exit(3)
 
-file_outputs = {}
+
+def make_depth_material(frame_units: float):
+    """Camera-space depth -> greyscale. Near = white, far = black.
+
+    The range is ABSOLUTE (derived from --frame), not auto-fitted per render, so
+    the same point on the hull maps to the same grey in every heading and in
+    every subject. That comparability is the entire point of a depth channel.
+    """
+    mat = bpy.data.materials.new("_depth")
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+
+    cam = tree.nodes.new("ShaderNodeCameraData")
+    rng = tree.nodes.new("ShaderNodeMapRange")
+    rng.inputs["From Min"].default_value = CAM_DIST - frame_units * 0.5
+    rng.inputs["From Max"].default_value = CAM_DIST + frame_units * 0.5
+    rng.inputs["To Min"].default_value = 1.0
+    rng.inputs["To Max"].default_value = 0.0
+    rng.clamp = True
+    emit = tree.nodes.new("ShaderNodeEmission")
+    out = tree.nodes.new("ShaderNodeOutputMaterial")
+
+    tree.links.new(cam.outputs["View Z Depth"], rng.inputs["Value"])
+    tree.links.new(rng.outputs["Result"], emit.inputs["Color"])
+    tree.links.new(emit.outputs["Emission"], out.inputs["Surface"])
+    return mat
+
+
+def make_normal_material():
+    """World normal -> CAMERA space -> encoded 0..1 as RGB.
+
+    Camera space, not world space: a world-space normal map would rotate with
+    the ship between headings, so the same surface would encode a different
+    colour per view and be unusable for relighting a sprite.
+    """
+    mat = bpy.data.materials.new("_normal")
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+
+    geo = tree.nodes.new("ShaderNodeNewGeometry")
+    xf = tree.nodes.new("ShaderNodeVectorTransform")
+    xf.vector_type = "NORMAL"
+    xf.convert_from = "WORLD"
+    xf.convert_to = "CAMERA"
+    # Encode -1..1 into 0..1, NEGATING Z.
+    #
+    # Blender's WORLD->CAMERA transform returns camera-facing normals with
+    # z ~= -1, the opposite of the OpenGL normal-map convention where +Z points
+    # out of the surface toward the viewer (camera-facing = blue). Measured, not
+    # assumed: before the flip, mean B over the opaque pixels of a bow-on view
+    # was 24/255, decoding to z = -0.81 on a convex hull viewed head-on, which is
+    # physically backwards. Green is left as-is: this is the OpenGL/+Y-up
+    # convention, so flip G downstream if a consumer wants DirectX.
+    half = tree.nodes.new("ShaderNodeVectorMath")
+    half.operation = "MULTIPLY_ADD"
+    half.inputs[1].default_value = (0.5, 0.5, -0.5)
+    half.inputs[2].default_value = (0.5, 0.5, 0.5)
+    emit = tree.nodes.new("ShaderNodeEmission")
+    out = tree.nodes.new("ShaderNodeOutputMaterial")
+
+    tree.links.new(geo.outputs["Normal"], xf.inputs["Vector"])
+    tree.links.new(xf.outputs["Vector"], half.inputs[0])
+    tree.links.new(half.outputs["Vector"], emit.inputs["Color"])
+    tree.links.new(emit.outputs["Emission"], out.inputs["Surface"])
+    return mat
 
 # ---------------------------------------------------------------- orbit
 CAM_DIST = FRAME * 1.6
 elev = math.radians(ELEV)
+
+# Built AFTER CAM_DIST — the depth range is anchored to the camera distance.
+PASS_MATERIAL = {"albedo": None}
+if "depth" in PASSES:
+    PASS_MATERIAL["depth"] = make_depth_material(FRAME)
+if "normal" in PASSES:
+    PASS_MATERIAL["normal"] = make_normal_material()
+
+view_layer = scene.view_layers[0]
 
 written = []
 for i, heading in enumerate(HEADINGS):
@@ -212,27 +278,26 @@ for i, heading in enumerate(HEADINGS):
     )
 
     # Orbit the light rig by the same delta as the camera, so every heading is
-    # lit identically relative to the hull.
+    # lit identically relative to the hull. (Irrelevant to the emission-based
+    # data passes, which are unlit by construction — kept here because albedo
+    # needs it and the cost is nil.)
     delta = ang - (-math.pi / 2)
     for s, base_z in zip(SUNS, SUN_BASE_Z):
         s.rotation_euler.z = base_z + delta
 
-    scene.render.filepath = os.path.join(OUT, "albedo", f"{heading}.png")
-    bpy.ops.render.render(write_still=True)
+    for pass_name in PASSES:
+        view_layer.material_override = PASS_MATERIAL[pass_name]
+        # Data maps must NOT be tone-mapped — 'Raw' writes the shader value
+        # through unchanged. 'Standard' would apply an sRGB curve and silently
+        # corrupt every depth reading and normal vector.
+        scene.view_settings.view_transform = (
+            "Standard" if pass_name == "albedo" else "Raw"
+        )
+        scene.render.filepath = os.path.join(OUT, pass_name, f"{heading}.png")
+        bpy.ops.render.render(write_still=True)
+
+    view_layer.material_override = None
     written.append(heading)
     print(f"[view {i}] {heading}", flush=True)
-
-# The compositor File Output node always appends the frame number; rename to the
-# bare heading so every channel matches assets/<subject>/<channel>/<heading>.png
-frame = scene.frame_current
-for key in file_outputs:
-    d = os.path.join(OUT, key)
-    for heading in written:
-        src = os.path.join(d, f"{heading}_{frame:04d}.png")
-        dst = os.path.join(d, f"{heading}.png")
-        if os.path.exists(src):
-            if os.path.exists(dst):
-                os.remove(dst)
-            os.rename(src, dst)
 
 print(f"STAGE3 DONE {SUBJECT} views={len(written)} passes={','.join(PASSES)}", flush=True)

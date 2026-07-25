@@ -1,0 +1,160 @@
+<meta charset="utf-8">
+<title>portlight-ships · spin test</title>
+<style>
+  :root { --bg:#15161a; --panel:#1e2027; --line:#32353f; --fg:#e6e8ee; --dim:#9aa0ad; --accent:#d9a441; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:13px/1.5 ui-monospace,Consolas,monospace; }
+  header { padding:10px 16px; border-bottom:1px solid var(--line); display:flex;
+           gap:18px; align-items:center; flex-wrap:wrap; }
+  h1 { font-size:14px; margin:0; letter-spacing:.04em; }
+  h1 span { color:var(--dim); font-weight:400; }
+  label { color:var(--dim); display:inline-flex; gap:6px; align-items:center; }
+  select, input[type=range] { background:var(--panel); color:var(--fg);
+           border:1px solid var(--line); border-radius:4px; padding:3px 6px; font:inherit; }
+  button { background:var(--panel); color:var(--fg); border:1px solid var(--line);
+           border-radius:4px; padding:4px 10px; font:inherit; cursor:pointer; }
+  button.on { border-color:var(--accent); color:var(--accent); }
+  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+         gap:12px; padding:16px; }
+  .cell { background:var(--panel); border:1px solid var(--line); border-radius:6px;
+          overflow:hidden; }
+  .cell h2 { font-size:11px; margin:0; padding:6px 8px; color:var(--dim);
+             border-bottom:1px solid var(--line); font-weight:400; }
+  .stage { position:relative; aspect-ratio:1; background:
+      repeating-conic-gradient(#2a2c34 0 25%, #22242b 0 50%) 0 0/20px 20px; }
+  .stage img { position:absolute; inset:0; width:100%; height:100%;
+               image-rendering:auto; }
+  /* Fixed reference marks. Anchor drift and scale jump are invisible when each
+     sprite is judged alone — against a FIXED graticule they are obvious. */
+  .marks { position:absolute; inset:0; pointer-events:none; display:none; }
+  .marks.on { display:block; }
+  .marks i { position:absolute; background:var(--accent); opacity:.55; }
+  .marks .v { left:50%; top:0; bottom:0; width:1px; }
+  .marks .h { top:50%; left:0; right:0; height:1px; }
+  .marks .box { position:absolute; border:1px dashed rgba(217,164,65,.5);
+                background:none; left:8%; right:8%; top:18%; bottom:18%; }
+  footer { padding:12px 16px; color:var(--dim); border-top:1px solid var(--line); }
+  code { color:var(--accent); }
+</style>
+
+<header>
+  <h1>portlight-ships <span id="hullName">· spin test</span></h1>
+  <label>channel
+    <select id="channel"></select>
+  </label>
+  <label>speed
+    <input id="speed" type="range" min="1" max="12" value="4">
+    <span id="fps">4</span> fps
+  </label>
+  <button id="play" class="on">pause</button>
+  <button id="marksBtn" class="on">graticule</button>
+  <button id="step">step ▸</button>
+  <span id="heading" style="color:var(--accent)"></span>
+</header>
+
+<main id="grid"></main>
+
+<footer>
+  Every state spins <strong>in lockstep</strong> on one clock. Watch for:
+  <strong>scale jump</strong> (a state larger/smaller than its neighbours against the
+  dashed box) · <strong>anchor drift</strong> (hull wandering off the crosshair as it
+  turns) · <strong>flicker</strong> (a heading darker than the rest) ·
+  <strong>silhouette pop</strong> (shape discontinuity between adjacent headings).
+  <br><br>
+  This is a <em>proxy</em> for an in-engine spin test, not a substitute — it exercises
+  the sprites the way a renderer would, but it is not the renderer.
+</footer>
+
+<script>
+const HEADINGS = ["front","front_left","left","back_left","back","back_right","right","front_right"];
+
+// Turn order is the ORBIT order, which is what a ship actually does when it comes
+// about. Playing them in array order would step 45° each time but is the same
+// thing here — kept explicit so a future reorder of HEADINGS cannot silently
+// scramble the turn cycle.
+const TURN = HEADINGS.slice();
+
+let subjects = [], channels = ["albedo"], idx = 0, timer = null, playing = true;
+// Resolved at boot so the page works both at /tools/spin-test.html and served
+// from the repo root — asset paths must follow wherever pack.json was found.
+let BASE = "../";
+
+async function boot() {
+  let pack = null;
+  for (const [base, url] of [["../", "../hulls/galleon/pack.json"],
+                             ["", "hulls/galleon/pack.json"]]) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) { pack = await r.json(); BASE = base; break; }
+    } catch (e) {}
+  }
+  if (!pack) {
+    document.getElementById("grid").innerHTML =
+      "<p style='padding:16px;color:#f66'>Could not load pack.json — serve the repo root " +
+      "(<code>python -m http.server</code>) rather than opening this file directly.</p>";
+    return;
+  }
+  subjects = pack.subjects;
+  channels = pack.channels || ["albedo"];
+  document.getElementById("hullName").textContent =
+    `· ${pack.hull} · ${subjects.length} states · ${pack.size}px`;
+
+  const sel = document.getElementById("channel");
+  sel.innerHTML = channels.map(c => `<option>${c}</option>`).join("");
+  sel.onchange = render;
+
+  document.getElementById("grid").innerHTML = subjects.map(s => `
+    <div class="cell">
+      <h2>${s.replace(/^[^_]+__/, "")}</h2>
+      <div class="stage">
+        <img id="img-${s}" alt="${s}">
+        <div class="marks on" id="marks-${s}">
+          <i class="v"></i><i class="h"></i><div class="box"></div>
+        </div>
+      </div>
+    </div>`).join("");
+  render();
+  start();
+}
+
+function render() {
+  const ch = document.getElementById("channel").value || "albedo";
+  const h = TURN[idx];
+  document.getElementById("heading").textContent = h;
+  for (const s of subjects) {
+    const img = document.getElementById("img-" + s);
+    if (img) img.src = `${BASE}assets/${s}/${ch}/${h}.png`;
+  }
+}
+
+function start() {
+  clearInterval(timer);
+  const fps = +document.getElementById("speed").value;
+  timer = setInterval(() => { if (playing) { idx = (idx + 1) % TURN.length; render(); } },
+                      1000 / fps);
+}
+
+document.getElementById("speed").oninput = e => {
+  document.getElementById("fps").textContent = e.target.value;
+  start();
+};
+document.getElementById("play").onclick = e => {
+  playing = !playing;
+  e.target.textContent = playing ? "pause" : "play";
+  e.target.classList.toggle("on", playing);
+};
+document.getElementById("step").onclick = () => {
+  playing = false;
+  const b = document.getElementById("play");
+  b.textContent = "play"; b.classList.remove("on");
+  idx = (idx + 1) % TURN.length; render();
+};
+document.getElementById("marksBtn").onclick = e => {
+  e.target.classList.toggle("on");
+  const on = e.target.classList.contains("on");
+  document.querySelectorAll(".marks").forEach(m => m.classList.toggle("on", on));
+};
+
+boot();
+</script>

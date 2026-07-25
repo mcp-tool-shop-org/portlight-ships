@@ -14,7 +14,9 @@
     "front_right"
   ],
   "channels": [
-    "albedo"
+    "albedo",
+    "depth",
+    "normal"
   ],
   "size": 512,
   "frame_world_units": 13.0,
