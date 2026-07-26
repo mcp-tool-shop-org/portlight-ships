@@ -1,0 +1,20 @@
+{
+  "target_length": 10.0,
+  "meshes": [
+    {
+      "file": "sloop__01-pristine__sails-open.glb",
+      "extents_before": [
+        1.119,
+        2.5,
+        3.287
+      ],
+      "extents_after": [
+        3.404,
+        7.607,
+        10.0
+      ],
+      "scale_applied": 3.0427,
+      "height_after": 7.607
+    }
+  ]
+}

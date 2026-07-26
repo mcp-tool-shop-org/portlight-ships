@@ -55,6 +55,14 @@ SIZE = int(arg("--size", "512"))
 FRAME = float(arg("--frame", "13.0"))   # world units the frame must span
 ELEV = float(arg("--elev", "30.0"))     # camera elevation, degrees — 2.5D three-quarter
 PASSES = [p.strip() for p in arg("--passes", "albedo").split(",") if p.strip()]
+# Light rig scale. The base energies were inherited from turntable.py, whose own
+# comment says they were tuned so "black armour shows edges/specular, not a void"
+# — i.e. deliberately built to LIFT dark values on character models. Applied to
+# ships with painted palettes it lifts everything: measured across six hulls the
+# renders lost 46-78% of plate saturation and 60-80% of dark pixels. Training on
+# that would teach the model that every ship is pale cream.
+LIGHT = float(arg("--light", "1.0"))
+WORLD = float(arg("--world", "0.85"))
 
 HEADINGS = [
     "front", "front_left", "left", "back_left",
@@ -125,7 +133,7 @@ bpy.context.scene.world = world
 world.use_nodes = True
 bg = world.node_tree.nodes["Background"]
 bg.inputs[0].default_value = (0.22, 0.22, 0.24, 1.0)
-bg.inputs[1].default_value = 0.85
+bg.inputs[1].default_value = WORLD
 
 
 def sun(name, energy, rot):
@@ -145,10 +153,10 @@ def sun(name, energy, rot):
 # the camera keeps relative lighting identical across all 8 headings, which is
 # what makes them usable as a turn cycle.
 SUNS = [
-    sun("key", 5.2, (math.radians(58), 0, math.radians(38))),
-    sun("fill", 3.0, (math.radians(62), 0, math.radians(-48))),
-    sun("rim", 5.5, (math.radians(-48), 0, math.radians(170))),
-    sun("top", 1.8, (math.radians(8), 0, 0)),
+    sun("key", 5.2 * LIGHT, (math.radians(58), 0, math.radians(38))),
+    sun("fill", 3.0 * LIGHT, (math.radians(62), 0, math.radians(-48))),
+    sun("rim", 5.5 * LIGHT, (math.radians(-48), 0, math.radians(170))),
+    sun("top", 1.8 * LIGHT, (math.radians(8), 0, 0)),
 ]
 SUN_BASE_Z = [s.rotation_euler.z for s in SUNS]
 

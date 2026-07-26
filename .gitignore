@@ -23,3 +23,6 @@ __pycache__/
 # OS
 Thumbs.db
 .DS_Store
+
+# showcase panels live in the public brand repo, not here
+_showcase/

@@ -1,0 +1,20 @@
+{
+  "target_length": 10.0,
+  "meshes": [
+    {
+      "file": "frigate__01-pristine__sails-open.glb",
+      "extents_before": [
+        1.494,
+        2.5,
+        3.81
+      ],
+      "extents_after": [
+        3.922,
+        6.561,
+        10.0
+      ],
+      "scale_applied": 2.62438,
+      "height_after": 6.561
+    }
+  ]
+}

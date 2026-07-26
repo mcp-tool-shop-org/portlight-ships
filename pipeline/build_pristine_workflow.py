@@ -43,11 +43,55 @@ SYSTEM_PROMPT = (
     "conversational requests."
 )
 
-FRAMING = (
-    "Rendered at a 3/4 FRONT angle with the BOW POINTING LEFT, the vessel centred and fully "
-    "inside the frame with clear margin on all four sides, clean even lighting, no water, no "
-    "ground plane, no cast shadow. THE BACKGROUND IS FLAT PURE CHROMA-KEY GREEN, pure "
-    "saturated RGB(0,255,0), completely uniform with no gradient or shading."
+# CAMERA IS ITS OWN EMPHATIC BLOCK, and it is placed LAST so it is the final word
+# on composition.
+#
+# The first version said "Rendered at a 3/4 FRONT angle with the BOW POINTING
+# LEFT" and the xebec came back as a near-pure broadside. Two causes:
+#   1. "3/4 front angle" is jargon the model does not reliably ground.
+#   2. More importantly, the hull's own silhouette_cue is written in PROFILE
+#      language — "low, long and sharp", "slung between two points", "reads as a
+#      low dark sliver". Canon was describing the broadside, and a one-line
+#      camera note lost the argument to a paragraph of profile description.
+#
+# A profile plate is not merely off-spec: the mesh stage feeds Tripo
+# [front, side, stern], so a profile "front" makes two of three views
+# near-duplicates and costs real depth information. The xebec mesh came out with
+# a beam of 1.95 against a length of 10.
+#
+# So: describe the camera POSITION concretely rather than naming the angle, state
+# what must be simultaneously visible, and add the explicit negative. Same shape
+# as the STOWED and mast-break fixes — describe the result, then forbid the
+# failure.
+# Takes has_bowsprit because three hulls in the fleet do not have one. The junk,
+# galley and cog all declare `bowsprit: false`, and until this was parameterised the
+# camera block asserted "the bowsprit projects toward the LOWER LEFT" at every hull —
+# a false instruction sitting in the single most emphatic, last-placed section of the
+# prompt, on hulls whose canon explicitly forbids a bowsprit. Left alone it would have
+# fought the DO NOT block and probably grown one.
+def framing(has_bowsprit: bool) -> str:
+    bow_clause = (
+        "The bowsprit projects toward the LOWER LEFT of the frame and the stern is the "
+        "furthest part of the ship from the camera.\n"
+        if has_bowsprit else
+        "NOTHING PROJECTS FORWARD OF THE BOW — this vessel has no bowsprit and no spar of any "
+        "kind out front. The stern is the furthest part of the ship from the camera.\n"
+    )
+    return (
+    "CAMERA — this is the most important compositional instruction and it overrides any "
+    "impression of a side view given by the shape description above.\n"
+    "Place the camera OFF THE VESSEL'S PORT BOW: forward of amidships, out to the left, and "
+    "raised to about twenty degrees above deck level looking slightly down.\n"
+    "You must see the PORT SIDE OF THE HULL and the FRONT OF THE BOW AT THE SAME TIME. The "
+    "deck must be visible, receding away from the viewer toward the stern. "
+    + bow_clause +
+    "THIS IS A THREE-QUARTER VIEW. It is NOT a flat side-on profile, NOT a broadside "
+    "elevation, and NOT an orthographic side view. If the masts appear as a flat row on a "
+    "single plane and no deck is visible, the camera is wrong.\n"
+    "The bow points LEFT. The vessel is centred and fully inside the frame with clear margin "
+    "on all four sides. Clean even lighting, no water, no ground plane, no cast shadow.\n"
+    "THE BACKGROUND IS FLAT PURE CHROMA-KEY GREEN, pure saturated RGB(0,255,0), completely "
+    "uniform with no gradient or shading."
 )
 STYLE = (
     "Stylised 2.5D game-asset look: crisp readable silhouette, clean line work, restrained "
@@ -87,17 +131,36 @@ def pristine_prompt(hull: dict) -> str:
     sails = ", ".join(s["id"] for s in rig["sails"])
 
     return (
-        f"3D game asset render of a {hull['ship_class']}, a {hull['era']} sailing vessel.\n\n"
+        # reference_period, NOT the hull's tradition. Canon dropped `era` for
+        # `tradition` on 2026-07-25 because the fleet spanned two real centuries and
+        # the world is not tied to a date — but the image model knows what "a 1600s
+        # sailing vessel" looks like and has never heard of a cold-coast one. So the
+        # prompt speaks the model's language and canon speaks the world's. Feeding
+        # the tradition slug here would be strictly worse than feeding nothing.
+        f"3D game asset render of a {hull['ship_class']}, "
+        f"a {v['reference_period']} sailing vessel.\n\n"
         f"SHAPE: {v['silhouette_cue']}\n\n"
         f"STRUCTURE — this vessel has exactly {len(rig['masts'])} mast(s): {masts}. "
         f"It carries exactly {len(rig['sails'])} sails: {sails}. Draw every one of them and "
         f"draw no others.\n\n"
         f"MUST SHOW: {'; '.join(hull['signature_features'])}.\n\n"
-        f"MATERIALS: {v['material_dominant']}. Palette: {' '.join(v['palette'])}.\n\n"
         f"CONDITION: PRISTINE and immaculate. Every sail whole and set full and drawing. "
         f"Rigging taut. Planking sound. No damage of any kind anywhere.\n\n"
-        f"{FRAMING}\n\n{STYLE}\n\n"
-        f"DO NOT: {'; '.join(hull['forbidden_inputs'])}."
+        f"{STYLE}\n\n"
+        f"DO NOT: {'; '.join(hull['forbidden_inputs'])}; a flat side-on profile or broadside "
+        f"elevation view.\n\n"
+        # COLOUR sits immediately before CAMERA, not five paragraphs above it.
+        # In the xebec V2 run the palette line was high in the prompt, above a much
+        # longer camera block, and the vessel came back with its canon-pinned red
+        # sheer stripe (#b03028) largely gone to plain timber. Same positional
+        # effect that made the camera clause lose to the shape description: what
+        # sits last carries. Colour is now the last thing before the camera, and
+        # hull_markings — which were not in the prompt at all — are named here.
+        f"COLOUR AND MARKINGS — use this exact palette and no other: "
+        f"{' '.join(v['palette'])}. The vessel is {v['material_dominant']}. "
+        f"These markings must be present and clearly visible: "
+        f"{'; '.join(v.get('hull_markings', []))}.\n\n"
+        f"{framing(rig.get('bowsprit', True))}"
     )
 
 
@@ -112,14 +175,54 @@ def nb(prompt: str, seed: int, title: str, ref: str | None = None) -> dict:
     return {"inputs": inputs, "class_type": "GeminiNanoBanana2", "_meta": {"title": title}}
 
 
-def build(hull_id: str) -> dict:
+def build(hull_id: str, plate_only: bool = False, from_plate: str | None = None) -> dict:
+    """Assemble the workflow for one hull.
+
+    THREE MODES, and the third is the one that matters in practice:
+
+      plate_only        generate the plate and stop. The plate is the gate.
+      (default)         generate the plate AND mesh it, in one job.
+      from_plate=<file> mesh an ALREADY-APPROVED plate that is on the cloud.
+
+    `from_plate` exists because the default mode quietly wastes money and loses
+    work once a plate has been reviewed. Re-running it regenerates node 1 from
+    scratch — a fresh paid call producing a DIFFERENT plate from the one that was
+    approved. For the junk that would have silently discarded a bow-fix edit pass
+    that had already been paid for and signed off. Since every hull goes
+    plate -> review -> mesh, `from_plate` is the normal path to the mesh stage and
+    the default is really only for a first run where nobody has looked yet.
+
+    Register the plate as an input with the comfy-cloud `use_previous_output` tool,
+    which returns the filename to pass here.
+    """
     hull = load_hull(hull_id)
     sid = f"{hull_id}__01-pristine__sails-open"
+
+    if plate_only:
+        # The plate is the gate. Prove the camera before paying for a mesh.
+        return {
+            "1": nb(pristine_prompt(hull), 1001, f"pristine · {hull_id}"),
+            "8": {"inputs": {"filename_prefix": f"{hull_id}/plates-raw/{sid}",
+                             "images": ["1", 0]},
+                  "class_type": "SaveImage", "_meta": {"title": f"plate · {sid}"}},
+        }
+
+    if from_plate:
+        head = {"0": {"inputs": {"image": from_plate}, "class_type": "LoadImage",
+                      "_meta": {"title": f"approved plate · {hull_id}"}}}
+        src, tail = "0", {}          # no SaveImage — the plate is already saved
+    else:
+        head = {"1": nb(pristine_prompt(hull), 1001, f"pristine · {hull_id}")}
+        src = "1"
+        tail = {"8": {"inputs": {"filename_prefix": f"{hull_id}/plates-raw/{sid}",
+                                 "images": ["1", 0]},
+                      "class_type": "SaveImage", "_meta": {"title": f"plate · {sid}"}}}
+
     return {
-        "1": nb(pristine_prompt(hull), 1001, f"pristine · {hull_id}"),
-        "2": nb(BG_PROMPT, 1004, f"no-bg · {hull_id}", ref="1"),
-        "3": nb(SIDE_PROMPT, 1002, f"side · {hull_id}", ref="1"),
-        "4": nb(STERN_PROMPT, 1003, f"stern · {hull_id}", ref="1"),
+        **head,
+        "2": nb(BG_PROMPT, 1004, f"no-bg · {hull_id}", ref=src),
+        "3": nb(SIDE_PROMPT, 1002, f"side · {hull_id}", ref=src),
+        "4": nb(STERN_PROMPT, 1003, f"stern · {hull_id}", ref=src),
         "5": {
             "inputs": {"images.image0": ["2", 0], "images.image1": ["3", 0],
                        "images.image2": ["4", 0]},
@@ -130,8 +233,7 @@ def build(hull_id: str) -> dict:
         "7": {"inputs": {"filename_prefix": f"{hull_id}/mesh/{sid}", "image": "",
                          "mesh": ["6", 2]},
               "class_type": "SaveGLB", "_meta": {"title": f"glb · {sid}"}},
-        "8": {"inputs": {"filename_prefix": f"{hull_id}/plates-raw/{sid}", "images": ["1", 0]},
-              "class_type": "SaveImage", "_meta": {"title": f"plate · {sid}"}},
+        **tail,
     }
 
 
@@ -140,13 +242,18 @@ def main() -> int:
     ap.add_argument("--hull", required=True)
     ap.add_argument("--out", default=None)
     ap.add_argument("--show-prompt", action="store_true")
+    ap.add_argument("--plate-only", action="store_true")
+    ap.add_argument("--from-plate", default=None,
+                    help="Cloud filename of an already-approved plate (from the "
+                         "use_previous_output tool). Meshes that exact plate instead "
+                         "of paying to regenerate a different one.")
     args = ap.parse_args()
 
     if args.show_prompt:
         print(pristine_prompt(load_hull(args.hull)))
         return 0
 
-    wf = build(args.hull)
+    wf = build(args.hull, plate_only=args.plate_only, from_plate=args.from_plate)
     text = json.dumps(wf, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")

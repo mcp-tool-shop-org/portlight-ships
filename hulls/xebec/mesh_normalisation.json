@@ -4,17 +4,32 @@
     {
       "file": "xebec__01-pristine__sails-open.glb",
       "extents_before": [
-        0.73,
+        0.677,
         2.5,
-        3.745
+        3.837
       ],
       "extents_after": [
-        1.949,
-        6.675,
+        1.764,
+        6.516,
         10.0
       ],
-      "scale_applied": 2.6701,
-      "height_after": 6.675
+      "scale_applied": 2.60641,
+      "height_after": 6.516
+    },
+    {
+      "file": "xebec__01-pristine__sails-open__v2.glb",
+      "extents_before": [
+        0.677,
+        2.5,
+        3.837
+      ],
+      "extents_after": [
+        1.764,
+        6.516,
+        10.0
+      ],
+      "scale_applied": 2.60641,
+      "height_after": 6.516
     }
   ]
 }

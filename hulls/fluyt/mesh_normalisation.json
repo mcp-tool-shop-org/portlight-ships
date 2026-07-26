@@ -1,0 +1,20 @@
+{
+  "target_length": 10.0,
+  "meshes": [
+    {
+      "file": "fluyt__01-pristine__sails-open.glb",
+      "extents_before": [
+        7.497,
+        12.0,
+        16.965
+      ],
+      "extents_after": [
+        4.419,
+        7.074,
+        10.0
+      ],
+      "scale_applied": 0.58946,
+      "height_after": 7.074
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "target_length": 10.0,
+  "meshes": [
+    {
+      "file": "brig__01-pristine__sails-open.glb",
+      "extents_before": [
+        0.781,
+        1.5,
+        2.124
+      ],
+      "extents_after": [
+        3.678,
+        7.061,
+        10.0
+      ],
+      "scale_applied": 4.70735,
+      "height_after": 7.061
+    }
+  ]
+}

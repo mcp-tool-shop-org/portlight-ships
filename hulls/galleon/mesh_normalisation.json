@@ -2,124 +2,19 @@
   "target_length": 10.0,
   "meshes": [
     {
-      "file": "galleon__01-pristine__sails-closed.glb",
-      "extents_before": [
-        0.817,
-        2.5,
-        3.064
-      ],
-      "extents_after": [
-        2.665,
-        8.159,
-        10.0
-      ],
-      "scale_applied": 3.26371,
-      "height_after": 8.159
-    },
-    {
       "file": "galleon__01-pristine__sails-open.glb",
       "extents_before": [
-        1.364,
-        2.5,
-        3.219
+        1.932,
+        3.5,
+        4.947
       ],
       "extents_after": [
-        4.238,
-        7.767,
+        3.905,
+        7.075,
         10.0
       ],
-      "scale_applied": 3.10686,
-      "height_after": 7.767
-    },
-    {
-      "file": "galleon__02-light__sails-closed.glb",
-      "extents_before": [
-        0.152,
-        0.5,
-        0.608
-      ],
-      "extents_after": [
-        2.501,
-        8.218,
-        10.0
-      ],
-      "scale_applied": 16.43516,
-      "height_after": 8.218
-    },
-    {
-      "file": "galleon__02-light__sails-open.glb",
-      "extents_before": [
-        5.793,
-        12.0,
-        14.777
-      ],
-      "extents_after": [
-        3.92,
-        8.121,
-        10.0
-      ],
-      "scale_applied": 0.67673,
-      "height_after": 8.121
-    },
-    {
-      "file": "galleon__03-moderate__sails-closed.glb",
-      "extents_before": [
-        0.889,
-        3.0,
-        3.605
-      ],
-      "extents_after": [
-        2.467,
-        8.322,
-        10.0
-      ],
-      "scale_applied": 2.77397,
-      "height_after": 8.322
-    },
-    {
-      "file": "galleon__03-moderate__sails-open.glb",
-      "extents_before": [
-        3.258,
-        8.0,
-        9.781
-      ],
-      "extents_after": [
-        3.331,
-        8.179,
-        10.0
-      ],
-      "scale_applied": 1.02243,
-      "height_after": 8.179
-    },
-    {
-      "file": "galleon__04-heavy__sails-open.glb",
-      "extents_before": [
-        1.112,
-        2.5,
-        3.057
-      ],
-      "extents_after": [
-        3.637,
-        8.179,
-        10.0
-      ],
-      "scale_applied": 3.27171,
-      "height_after": 8.179
-    },
-    {
-      "file": "galleon__05-destroyed__sails-none.glb",
-      "extents_before": [
-        1.169,
-        2.5,
-        3.252
-      ],
-      "extents_after": [
-        3.596,
-        7.688,
-        10.0
-      ],
-      "scale_applied": 3.07506,
-      "height_after": 7.688
+      "scale_applied": 2.02135,
+      "height_after": 7.075
     }
   ]
 }

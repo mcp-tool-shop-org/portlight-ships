@@ -96,7 +96,7 @@ def rig_phrase(hull: dict) -> str:
             return ids[0]
         return ", ".join(ids[:-1]) + " and " + ids[-1]
 
-    square, lateen, gaff, spanker, topsail_over_gaff = [], [], [], [], []
+    square, lateen, gaff, spanker, topsail_over_gaff, lug = [], [], [], [], [], []
     for m in plan["masts"]:
         mid = m["id"]
         kinds = by_mast.get(mid, set())
@@ -114,15 +114,24 @@ def rig_phrase(hull: dict) -> str:
                 topsail_over_gaff.append(mid)
         elif "lateen" in kinds:
             lateen.append(mid)
+        elif "lugsail" in kinds:
+            # The junk's battened lugsail. Added when the far-trade tradition got its
+            # first hull. Note this branch is not decoration: before it existed, a
+            # mast carrying ONLY a lugsail matched no branch, landed in no list, and
+            # was silently dropped from the caption — a three-masted junk would have
+            # been captioned as a three-masted ship with no rig described at all.
+            lug.append(mid)
 
     single = len(plan["masts"]) == 1
     parts = []
     if square:
-        parts.append(f"square-rigged {names(square)}")
+        parts.append("single square-rigged mast" if single else f"square-rigged {names(square)}")
     if gaff:
         parts.append("single gaff-rigged mast" if single else f"gaff-rigged {names(gaff)}")
     if lateen:
         parts.append(f"lateen-rigged {names(lateen)}")
+    if lug:
+        parts.append(f"battened lugsails on the {names(lug)}")
     if spanker:
         parts.append(f"with a gaff spanker on the {names(spanker)}")
     if topsail_over_gaff:
@@ -140,7 +149,7 @@ def caption(hull: dict, heading: str, elev: str) -> str:
         f"a {hull['ship_class']}",
         f"{n_masts}-masted sailing ship" if n_masts > 1 else "single-masted sailing ship",
         rig_phrase(hull),
-        f"{n_sails} sails set",
+        f"{n_sails} sail{'s' if n_sails != 1 else ''} set",
         *[s.split(" — ")[0].strip() for s in sig],
         "pristine undamaged condition",
         HEADINGS[heading],
@@ -150,11 +159,91 @@ def caption(hull: dict, heading: str, elev: str) -> str:
     return ", ".join(b for b in bits if b)
 
 
+def check_no_clipping(out: Path, frame: float) -> int:
+    """Fail the build if any render touches a frame edge.
+
+    A clipped ship is a ship with a piece missing, and the caption still claims
+    the piece is there — so a clipped set teaches the model that a barque
+    sometimes has two masts. It is the single most corrupting defect this stage
+    can produce and it is completely silent: the images look fine in a contact
+    sheet, because a cropped bowsprit just reads as a shorter bowsprit.
+
+    This exists because --frame is fleet-dependent and WILL go stale. When the
+    junk was added she became the fleet's worst case and pushed the requirement
+    from 12.04 to 12.78, so the value derived for ten hulls would have clipped
+    her. Rather than rely on remembering to re-derive it, verify the output and
+    print the value that would have worked.
+    """
+    import numpy as np
+    from PIL import Image
+
+    clipped, worst = [], 0.0
+    for p in sorted(out.glob("*.png")):
+        a = np.asarray(Image.open(p).convert("RGBA"))[:, :, 3] > 16
+        if not a.any():
+            clipped.append(f"{p.name} (EMPTY)")
+            continue
+        ys, xs = np.where(a)
+        H, W = a.shape
+        if xs.min() <= 1 or ys.min() <= 1 or xs.max() >= W - 2 or ys.max() >= H - 2:
+            clipped.append(p.name)
+        worst = max(worst, max(abs(xs.min() - W / 2), abs(xs.max() - W / 2),
+                               abs(ys.min() - H / 2), abs(ys.max() - H / 2)) / (W / 2))
+
+    if clipped:
+        print(f"\nFAIL: {len(clipped)} of {len(list(out.glob('*.png')))} renders touch a "
+              f"frame edge at --frame {frame}.")
+        for n in clipped[:8]:
+            print(f"  {n}")
+        if len(clipped) > 8:
+            print(f"  ... and {len(clipped) - 8} more")
+        print(f"\nRe-run with --frame {frame * worst / 0.96:.1f} (or higher). "
+              f"THIS SET IS NOT SAFE TO TRAIN ON.")
+        return 1
+
+    print(f"no clipping — worst subject reaches {worst:.3f} of the half-frame "
+          f"at --frame {frame}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=r"E:\AI\_staging\ship-training")
     ap.add_argument("--size", type=int, default=768)
-    ap.add_argument("--frame", type=float, default=13.0)
+    # THIS VALUE IS FLEET-DEPENDENT. It is the smallest frame that fits the TALLEST
+    # hull in the fleet at the highest elevation, so it moves whenever a hull is
+    # added. Do not treat it as a constant.
+    #
+    # Derived by projecting every hull's vertices through the same orthographic
+    # camera math this pipeline uses, across all 8 headings x 3 elevations, and
+    # taking the worst case. History:
+    #
+    #   10 hulls  worst = galleon @50deg, half-reach 5.777  -> min frame 12.04
+    #   14 hulls  worst = junk    @50deg, half-reach 6.134  -> min frame 12.78
+    #
+    # 12.9 is the 14-hull figure with margin. The junk is the binding constraint
+    # because her masts are tall relative to her hull (height 7.88 against a
+    # normalised length of 10) — she is the fleet's worst case, not the galleon.
+    #
+    # Two earlier attempts got this wrong and both are worth not repeating. 13.0
+    # was safe but ~7% wasteful. 10.5 was measured from how much of the frame a
+    # subject's bounding box SPANNED (0.770) while assuming the subject was
+    # centred — it is not, since a hull's mass sits low and its masts are thin, so
+    # the projected silhouette is not centred on the bounding-box pivot. That one
+    # clipped 15 of 240 renders at the bottom edge. Span is the wrong measure;
+    # reach from the frame centre is the right one.
+    #
+    # Vertically re-centring was also tested: the best constant z-offset (-0.3)
+    # only lowers the 14-hull requirement to 12.38, so the existing
+    # bounding-box-mid-height pivot is already close to optimal and not worth a
+    # parameter.
+    #
+    # You do not have to remember any of this — check_no_clipping() below verifies
+    # the result and tells you the correct value if it is wrong.
+    #
+    # Do NOT propagate this to stage3's own default — the sprite pack needs the
+    # looser frame so damage states with debris keep consistent framing.
+    ap.add_argument("--frame", type=float, default=12.9)
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
@@ -187,6 +276,11 @@ def main() -> int:
                     "--glb", str(glb), "--out", str(dest), "--subject", hid,
                     "--size", str(args.size), "--frame", str(args.frame),
                     "--elev", str(elev_deg), "--passes", "albedo",
+                    # Measured, not chosen by eye: the inherited rig was tuned to lift
+                    # black armour and washed ships out — 46-78% of plate saturation and
+                    # 60-80% of dark pixels lost. At 0.35/0.18 luminance lands at 126
+                    # against a plate target of 130 and dark pixels at 37% against 32%.
+                    "--light", "0.35", "--world", "0.18",
                 ]
                 p = subprocess.run(cmd, capture_output=True, text=True)
                 if "STAGE3 DONE" not in p.stdout:
@@ -211,9 +305,12 @@ def main() -> int:
 
     if missing:
         print(f"\nno pristine mesh yet: {', '.join(missing)}")
-    print(f"\n{made} image/caption pairs written to {out}"
-          if not args.dry_run else "\n(dry run — no files written)")
-    return 0
+    if args.dry_run:
+        print("\n(dry run — no files written)")
+        return 0
+
+    print(f"\n{made} image/caption pairs written to {out}")
+    return check_no_clipping(out, args.frame)
 
 
 if __name__ == "__main__":
