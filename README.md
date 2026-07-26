@@ -170,9 +170,18 @@ python pipeline/build_training_set.py --out E:/AI/_staging/ship-training
 
 ## Model and dataset
 
-The trained adapter and the 336-pair dataset are being published to HuggingFace under
-[`mcp-tool-shop`](https://huggingface.co/mcp-tool-shop). Recommended checkpoint: **step
-6000**, rank 16, lr 1e-4. Trigger token `plsvessel`.
+Both released on HuggingFace, MIT:
+
+| | |
+|---|---|
+| Adapter | [`mikeyfrilot/portlight-ships-anatomy-lora`](https://huggingface.co/mikeyfrilot/portlight-ships-anatomy-lora) |
+| Dataset | [`mikeyfrilot/portlight-ships-anatomy`](https://huggingface.co/datasets/mikeyfrilot/portlight-ships-anatomy) |
+
+Recommended checkpoint **step 6000**, rank/alpha 16, lr 1e-4, bf16. Trigger token
+`plsvessel`. The dataset ships the 336 pairs plus all 14 canon entries with their sourcing.
+
+Damage and patina are **not** in any training caption — they are borrowed from the base
+model, so phrase them naturally rather than in the training caption's shape.
 
 ## License
 
