@@ -176,6 +176,8 @@ Both released on HuggingFace, MIT:
 |---|---|
 | Adapter | [`mcp-tool-shop/portlight-ships-anatomy-lora`](https://huggingface.co/mcp-tool-shop/portlight-ships-anatomy-lora) |
 | Dataset | [`mcp-tool-shop/portlight-ships-anatomy`](https://huggingface.co/datasets/mcp-tool-shop/portlight-ships-anatomy) |
+| Dataset card source | [`hf/portlight-ships-anatomy/README.md`](hf/portlight-ships-anatomy/README.md) |
+| Viewer metadata | [`hf/portlight-ships-anatomy/metadata.jsonl`](hf/portlight-ships-anatomy/metadata.jsonl) (`tools/build_hf_metadata.py`) |
 
 Recommended checkpoint **step 6000**, rank/alpha 16, lr 1e-4, bf16. Trigger token
 `plsvessel`. The dataset ships the 336 pairs plus all 14 canon entries with their sourcing.
